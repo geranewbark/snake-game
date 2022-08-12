@@ -1,0 +1,243 @@
+// в общем делаем змейку, хер пойми как пока что) 
+// НУЖНО РАЗОБРАТЬСЯ ПОЧЕМУ BlockInput не работает 
+//#include <winable.h>
+#include <iostream>
+#include <conio.h>
+#include <windows.h>
+
+
+void polygon (WORD, int [], int[]);
+void clear (COORD, int [], int []);
+void gameover ();
+void specialrestriction (double*, int*); // что бы змейка не могла менять движиние в противоположную сторону 
+void pause (); // будет отрабатывать паузу 
+
+HANDLE hout = GetStdHandle(STD_OUTPUT_HANDLE);
+CONSOLE_SCREEN_BUFFER_INFO csbiInfo;
+COORD cursorpos;
+
+int main () 
+{
+	GetConsoleScreenBufferInfo (hout, &csbiInfo);
+	WORD Attributes = csbiInfo.wAttributes;
+	
+    SetConsoleTextAttribute (hout, BACKGROUND_INTENSITY | BACKGROUND_RED | BACKGROUND_GREEN);
+    system ("cls");
+   
+	
+   
+    cursorpos.X = 7; cursorpos.Y = 5; // начальные координаты
+    
+	int arraywithX [2], arraywithY [2];
+    
+	arraywithX [0] = cursorpos.X; // загоняем в массив наши первые  
+    arraywithY [0] = cursorpos.Y; // координаты 
+    
+	int k = 0; // костыль
+	double keypressed; // просто костыль
+    int head_direction = 162; // в-вправо ы-вниз ф-влево ц-вверх (код в аске)  
+    
+	polygon (Attributes, arraywithX, arraywithY);
+	
+	 
+	while (keypressed != 27) // пока не нажат escape
+	{
+        k++;
+        
+		SetConsoleCursorPosition (hout, cursorpos);
+		if (kbhit())
+		{
+		    keypressed = getch();
+		   
+		    if ((keypressed != 27 ) && (keypressed != 162 ) && (keypressed != 235 ) && (keypressed != 228 ) && (keypressed != 230 ))
+			{
+				if (keypressed == 32) // отрабатывает пауза 
+				{   
+				    pause ();
+			        polygon (Attributes, arraywithX, arraywithY);
+				    SetConsoleCursorPosition (hout, cursorpos);
+				}
+				keypressed = head_direction; // это мы делаем, чтобы обезопасить себя от левых нажатий
+				
+			}
+		    
+			    
+		    specialrestriction (&keypressed, &head_direction);  
+		}                               
+	    // распознования направления движения
+		if (head_direction == 162)   // вправо, она будет работать по дефолту 
+		{
+		    std::cout<<"\xB1";    
+	        cursorpos.X += 2; // пробелы по иксу не равны пробелам по игрику 
+		    arraywithX [1] = cursorpos.X;
+		    arraywithY [1] = cursorpos.Y; // чтобы в массиве с У не было мусора 
+		}
+        else if (head_direction == 235) // вниз
+		{
+		    std::cout<<"\xB1";    
+	        cursorpos.Y += 1; 
+	        arraywithY [1] = cursorpos.Y;
+		} 
+	    else if (head_direction == 228) // влево 
+		{
+		    std::cout<<"\xB1";    
+	        cursorpos.X -= 2; 
+		    arraywithX [1] = cursorpos.X;
+		}
+	    else if (head_direction == 230) // вверх
+		{
+		    std::cout<<"\xB1";    
+	        cursorpos.Y -= 1; 
+		    arraywithY [1] = cursorpos.Y;
+		}
+	   // BlockInput (true);
+	    Sleep (300);
+	
+	    if ((cursorpos.X <= 4) || (cursorpos.X >= 54) || (cursorpos.Y <= 3) || (cursorpos.Y >= 23))
+		{
+          //  BlockInput (false);
+			gameover ();
+		   // BlockInput (false); 	
+            return 0;
+		}
+        //BlockInput (false);    
+	    
+	    clear (cursorpos, arraywithX, arraywithY);
+	    
+	    cursorpos.X = arraywithX [1]; // возвращаем координаты, по 
+	    cursorpos.Y = arraywithY [1]; // которым будет бегать голова
+    
+		//SetConsoleCursorPosition (hout,cursorpos);
+		
+		arraywithX [0] = arraywithX [1]; arraywithY [0] = arraywithY [1];
+		
+		// убераем старые координаты из наших масивов, в первом и втором елементе
+		// сейчас одинаковые координаты   
+	
+	
+	
+	}
+    
+} 
+
+void specialrestriction (double *keypressed, int *head_direction) 
+{   // змейка не может ползти назад 
+    if ((*(keypressed) != 162) && (*(head_direction) == 228))
+        *head_direction = *keypressed; 
+        
+    else if ((*(keypressed) != 228) && (*(head_direction) == 162)) 
+        *head_direction = *keypressed; 
+    
+    else  if  ((*(keypressed) != 230) && (*(head_direction) == 235))    
+        *head_direction = *keypressed;
+        
+    else if  ((*(keypressed) != 235) && (*(head_direction) == 230))  
+        *head_direction = *keypressed;
+}
+
+void pause () 
+{
+	int a = 0;
+	system ("cls");
+	//SetConsoleTextAttribute (hout, )
+	SetConsoleCursorPosition (hout, cursorpos);
+	std::cout<<"PAUSED";
+	while (a != 32)
+	{
+		if (kbhit())
+		{
+			int b = getch();
+			if (b == 32) // конец паузы 
+			    a = b;
+			    
+		}
+	}
+	system ("cls");
+}
+void clear (COORD cursorpos, int arraywithX [], int arraywithY [])
+{
+    cursorpos.X = arraywithX [0]; // возвращаем координаты обратно,
+    cursorpos.Y = arraywithY [0]; // чтобы повыставлять пробелы 
+	SetConsoleCursorPosition (hout,cursorpos);
+    std::cout<<" ";
+} 
+void gameover ()
+{
+	SetConsoleTextAttribute (hout, BACKGROUND_INTENSITY | BACKGROUND_RED | BACKGROUND_GREEN);
+	system ("cls");
+	
+	int arraygameover [10] [30] =
+    {1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
+	 1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
+	 1,0,1,1,0,1,1,1,0,1,1,1,1,0,0,0,0,1,0,0,0,1,0,0,0,0,0,1,1,1,
+	 1,0,1,1,0,1,1,1,0,1,1,1,1,0,1,1,0,1,1,1,0,1,1,1,0,1,1,1,1,1,
+	 1,0,1,1,0,1,1,1,0,1,1,1,1,0,1,1,0,1,0,0,0,1,1,1,0,1,1,1,1,1,
+	 1,0,1,1,0,1,1,1,0,1,1,1,1,0,1,1,0,1,0,1,1,1,1,1,0,1,1,1,1,1,
+	 1,0,0,0,0,1,1,1,0,0,0,0,1,0,0,0,0,1,0,0,0,1,1,1,0,1,1,1,1,1,
+	 1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
+	 1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
+	 1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1};
+	 cursorpos = {25,5};
+	 SetConsoleCursorPosition (hout, cursorpos);
+	 for (int a = 0; a < 10; a++)
+	 {
+	 	if (a != 0) 
+	        std::cout<<std::endl;
+	        cursorpos.Y++;
+	        SetConsoleCursorPosition (hout, cursorpos);
+		for (int b = 0; b < 28; b++) 
+	    {
+	    	if (arraygameover [a] [b] == 1)
+			{
+				SetConsoleTextAttribute (hout, FOREGROUND_INTENSITY | FOREGROUND_GREEN | FOREGROUND_BLUE);
+				std::cout<<"\xB1";
+			}
+			else
+			{   
+			    SetConsoleTextAttribute (hout, BACKGROUND_INTENSITY | BACKGROUND_RED | BACKGROUND_GREEN | BACKGROUND_BLUE);
+				std::cout<<" ";
+		    }
+		}
+	 }
+	 Sleep (1000);
+	 getch ();
+}
+
+void polygon (WORD Attributes, int arraywithX [], int arraywithY []) // рисует стенки для змейки 
+{
+    SetConsoleTextAttribute (hout, Attributes);
+      
+	COORD cursorpos;
+    cursorpos.X = 4; cursorpos.Y = 3;
+	SetConsoleCursorPosition (hout,cursorpos);
+	    
+	for (cursorpos.X = 4; cursorpos.X <= 53; cursorpos.X ++)
+	
+		std::cout<<"\xB1";
+        
+	cursorpos.Y ++; cursorpos.X = 4;
+	for (cursorpos.Y = 4; cursorpos.Y <= 22; cursorpos.Y ++)
+	{
+    	SetConsoleCursorPosition (hout,cursorpos);
+		std::cout<<"\xB1"; 
+	} 
+	
+	for (cursorpos.X = 4; cursorpos.X <= 53; cursorpos.X ++)
+	{ 
+		SetConsoleCursorPosition (hout,cursorpos);
+		std::cout<<"\xB1";	
+    }
+    
+    for (cursorpos.Y = 23; cursorpos.Y >= 3; cursorpos.Y --) // почему 23? 
+	{ 
+		SetConsoleCursorPosition (hout,cursorpos);
+		std::cout<<"\xB1";	
+	}
+	
+  // Sleep (1000);
+	SetConsoleTextAttribute (hout, FOREGROUND_INTENSITY | FOREGROUND_RED | BACKGROUND_INTENSITY | BACKGROUND_RED | BACKGROUND_GREEN);
+    
+    // вот тут судя по всему нужно будет переписать логику 
+	cursorpos.X = arraywithX [0]; // загоняем в массив наши первые координаты 
+    cursorpos.Y = arraywithY [0];
+}
